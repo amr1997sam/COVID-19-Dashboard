@@ -28,6 +28,12 @@ SET
 ALTER TABLE covid_deaths
 MODIFY total_cases INT;
 
+ALTER TABLE covid_deaths
+MODIFY new_cases INT;
+
+ALTER TABLE covid_deaths
+MODIFY new_deaths INT;
+
 ALTER TABLE covid_deaths ADD COLUMN date_backup VARCHAR(255);
 UPDATE covid_deaths SET date_backup = date;
 
@@ -100,3 +106,63 @@ FROM covid_deaths
 WHERE continent is NOT NULL AND life_expectancy IS NOT NULL
 GROUP BY location, life_expectancy
 ORDER BY 2;
+
+SELECT date, SUM(new_deaths) as tot_death_day
+FROM covid_deaths
+WHERE continent is NOT NULL
+GROUP BY date
+ORDER BY 1;
+
+SELECT date, SUM(new_vaccinations) as tot_vaccination_day
+FROM vaccination_data
+WHERE continent is NOT NULL
+GROUP BY date
+ORDER BY 1;
+
+SELECT date, SUM(new_cases) as tot_cases_pday
+FROM covid_deaths
+WHERE continent is NOT NULL
+GROUP BY date
+ORDER BY 1;
+
+SELECT dth.date, SUM(dth.new_cases) as tot_cases_pday, SUM(new_vaccinations) as tot_vaccination_day, SUM(new_deaths) as tot_death_day
+FROM covid_deaths as dth
+JOIN vaccination_data as vacc
+	ON dth.location = vacc.location
+	AND dth.date = vacc.date
+WHERE dth.continent is NOT NULL
+GROUP BY date
+ORDER BY 1;
+
+
+
+SELECT * 
+FROM coronavirus_covid_19_deaths_db.covid_deaths
+WHERE continent IS NOT NULL
+ORDER BY 3,4
+INTO OUTFILE 'outall.csv'
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n';
+
+
+-- Global numbers
+SELECT sum(new_cases) as total_cases, sum(new_deaths) as total_deaths, sum(total_deaths)*100/(sum(total_cases)) as death_percentage
+FROM covid_deaths
+WHERE continent IS NOT NULL;
+
+-- Death Percentage Per Country
+SELECT location, MAX(population) as population, (sum(new_deaths)/MAx(population))*100 as deaths_percentage
+FROM covid_deaths
+WHERE continent IS NOT NULL
+GROUP BY location
+order by 3;
+
+SELECT date, location, new_cases
+from covid_deaths
+WHERE location LIKE 'Anguilla';
+
+
+-- death overtime
+SELECT date, location, new_deaths
+FROM covid_deaths
+WHERE continent is NOT NULL;
